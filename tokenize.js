@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const fs = require('fs');
 
 const db = require('./config/mongoose')();
 
@@ -13,6 +14,10 @@ var regexps = {
 }
 
 var banned = {
+    'org-AT-lists': 1,
+    'mjzhosting': 1,
+    '-----Original': 1,
+    'Message-----': 1,
     gt: 1,
     quot: 1,
     AT: 1,
@@ -28,27 +33,52 @@ var banned = {
     ISBN: 1,
     'deleuze-guattari-driftline': 1,
     'deleuze-guattari-AT-driftline': 1,
+    'deleuze-guattari-AT-lists': 1,
     yahoo: 1,
     'E-Mail-Modul': 1,
     'http': 1,
-    '_______________________________________________': 1
+    '_______________________________________________': 1,
+    'lt': 1,
+    'sylvie_ruelle-AT-sbcglobal': 1
 };
 
 var walk = function(chain, count) {
     var node = 'the';
-    var tweet = [];
+    var phrase = [];
     while (count--) {
         if (chain[node].next.length) {
             var target = Math.floor(Math.random() * chain[node].next.length);
             var current = chain[node].next[target];
-            tweet.push(current);
+            phrase.push(current);
             node = current;
         } else {
             count = 0;
         }
     };
-    return tweet;
+    return phrase;
 };
+
+var combine = function(phrase) {
+    console.log(phrase);
+    var last = phrase[0];
+    var tweet = '';
+    phrase.forEach(function (word) {
+        if (last != word) {
+            if (!(word == '.' || word == ',')) {
+                tweet = tweet.concat(last).concat(' ');
+            } else {
+                tweet = tweet.concat(last);
+            }
+        }
+        last = word;
+    });
+    tweet = tweet.concat(last);
+    tweet = tweet.concat('.');
+    console.log(tweet);
+}
+
+                
+            
 
 var follows = function(token, last) {
     if (!(token in banned) && (banned[token] === 1)) {
@@ -100,7 +130,14 @@ var populate = function() {
                     });
                 }
             }); 
-            console.log(walk(markov, 24));
+            // combine(walk(markov, 24));
+            var markovfile = JSON.stringify(markov);
+            fs.writeFile("output.json", markovfile, 'utf8', function (err) {
+                if (err) {
+                    console.log("whoopsies");
+                    return console.log(err);
+                }
+            });
         });
 };
 
